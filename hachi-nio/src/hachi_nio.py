@@ -6,6 +6,8 @@ import json
 def receive(ref, data, cb):
     ref.chunck["bufferStack"] = b"".join([ref.chunck["bufferStack"], data])
 
+    print(ref.chunck["bufferStack"].hex())
+
     re_check = True
 
     while re_check:
@@ -29,6 +31,25 @@ def receive(ref, data, cb):
             cb(json.loads(buffer_header), buffer_message, ref)
 
             re_check = len(ref.chunck["bufferStack"]) > 0
+
+
+def send(ref, header, message):
+    if ref.transport.is_closing():
+        raise Exception("Error sending message for a connection (" + str(ref.id) + ") closed ")
+
+    str_header = json.dumps(header)
+
+    b_header = str_header.encode('utf-8')
+    b_message = message.encode('utf-8')
+
+    int.from_bytes(ref.chunck["bufferStack"][0:4], byteorder='little')
+
+    b_sz_data = (len(b_header) + len(b_message) + 8).to_bytes(4, byteorder='little')
+    b_sz_head = (len(b_header)).to_bytes(4, byteorder='little')
+
+    buff = b"".join([b_sz_data, b_sz_head, b_header, b_message])
+
+    ref.transport.write(buff)
 
 
 class HachiNIOServer(asyncio.Protocol):
@@ -57,7 +78,7 @@ class HachiNIOServer(asyncio.Protocol):
         }
 
     def send(self, header, message):
-        print(message)
+        send(self, header, message)
 
     def connection_made(self, transport):
         # transport.write(self.message.encode())
