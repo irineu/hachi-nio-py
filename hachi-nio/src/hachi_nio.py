@@ -56,10 +56,16 @@ class HachiNIOServer(asyncio.Protocol):
             "bufferStack": bytearray()
         }
 
+    def send(self, header, message):
+        print(message)
+
     def connection_made(self, transport):
         # transport.write(self.message.encode())
         # print('Data sent: {!r}'.format(self.message))
         self.transport = transport
+
+        if self.fn_client_connected is not None:
+            self.fn_client_connected(self)
 
     def data_received(self, data):
         #print('Data received: {!r}'.format(data.decode()))
@@ -68,28 +74,5 @@ class HachiNIOServer(asyncio.Protocol):
         receive(self, data, self.fn_data)
 
     def connection_lost(self, exc):
-        print('The client closed the connection')
         if self.fn_client_close is not None:
             self.fn_client_close(self)
-
-
-def on_con_lost():
-    print("cb lost")
-
-
-def on_data(header, message, ref):
-    print(header, ref.id)
-
-
-async def run_server(port):
-    loop = asyncio.get_running_loop()
-
-    server = await loop.create_server(
-        lambda: HachiNIOServer(on_data),
-        '0.0.0.0', port)
-
-    async with server:
-        await server.serve_forever()
-
-
-asyncio.run(run_server(7890))

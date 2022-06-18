@@ -1,6 +1,7 @@
 LICENSE
 README.md
 setup.py
+hachi-nio/src/hachi_nio.py
 hachi-nio/src/hachi_nio.egg-info/PKG-INFO
 hachi-nio/src/hachi_nio.egg-info/SOURCES.txt
 hachi-nio/src/hachi_nio.egg-info/dependency_links.txt

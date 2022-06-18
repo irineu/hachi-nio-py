@@ -1,3 +1,5 @@
 .idea/
 .idea/*
 dist/
+hachi-nio/src/__pycache__/
+hachi-nio/src/hachi_nio.egg-info/
