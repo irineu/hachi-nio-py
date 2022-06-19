@@ -97,3 +97,28 @@ class HachiNIOServer(asyncio.Protocol):
     def connection_lost(self, exc):
         if self.fn_client_close is not None:
             self.fn_client_close(self)
+
+
+class HachiNIOClient(HachiNIOServer):
+    def __init__(self,
+                 data,
+                 client_connected=None,
+                 client_close=None,
+                 client_end=None,
+                 client_timeout=None,
+                 client_error=None,
+                 ):
+
+        self.fn_client_connected = client_connected
+        self.fn_client_close = client_close
+        self.fn_client_end = client_end
+        self.fn_client_timeout = client_timeout
+        self.fn_client_error = client_error
+        self.fn_data = data
+        self.id = uuid.uuid4()
+        self.chunck = {
+            "messageSize": 0,
+            "headerSize": 0,
+            "buffer": bytearray(),
+            "bufferStack": bytearray()
+        }
