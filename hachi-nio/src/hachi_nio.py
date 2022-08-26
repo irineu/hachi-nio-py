@@ -6,8 +6,6 @@ import json
 def receive(ref, data, cb):
     ref.chunck["bufferStack"] = b"".join([ref.chunck["bufferStack"], data])
 
-    #print(ref.chunck["bufferStack"].hex())
-
     re_check = True
 
     while re_check:
@@ -40,11 +38,7 @@ def send(ref, header, message):
     str_header = json.dumps(header)
 
     b_header = str_header.encode('utf-8')
-
-    if type(message) is not bytes:
-        b_message = message.encode('utf-8')
-    else:
-        b_message = message
+    b_message = message.encode('utf-8') if isinstance(message, str) else message
 
     int.from_bytes(ref.chunck["bufferStack"][0:4], byteorder='little')
 
