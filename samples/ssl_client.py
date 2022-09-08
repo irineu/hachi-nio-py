@@ -30,8 +30,8 @@ async def run_client(addr,port):
     ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     ssl_ctx.options |= ssl.OP_NO_TLSv1
     ssl_ctx.options |= ssl.OP_NO_TLSv1_1
-    ssl_ctx.load_cert_chain('server-crt.pem', keyfile='server-key.pem')
-    ssl_ctx.load_verify_locations(cafile='ca-crt.pem')
+    # ssl_ctx.load_cert_chain('server-crt.pem', keyfile='server-key.pem')
+    # ssl_ctx.load_verify_locations(cafile='ca-crt.pem')
     ssl_ctx.check_hostname = False
 
     #ssl_ctx.verify_mode = ssl.VerifyMode.CERT_REQUIRED
