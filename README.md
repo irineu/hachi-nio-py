@@ -17,4 +17,8 @@ Binary Data, you can pass anything here
 
 ## Quick Start
 
+```
+pip install hachi-nio
+```
+
 TODO
