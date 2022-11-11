@@ -6,22 +6,31 @@ import json
 def receive(ref, data, cb):
     ref.chunck["bufferStack"] = b"".join([ref.chunck["bufferStack"], data])
 
-    #print(ref.chunck["bufferStack"].hex())
-
     re_check = True
+
+    PREFIX_BUFFER = "HNIO"
+    PROTOCOL_PREFIX = 8
 
     while re_check:
         re_check = False
 
-        if ref.chunck["messageSize"] == 0 and len(ref.chunck["bufferStack"]) >= 4:
-            ref.chunck["messageSize"] = int.from_bytes(ref.chunck["bufferStack"][0:4], byteorder='little')
+        if ref.chunck["messageSize"] == 0 and len(ref.chunck["bufferStack"]) >= len(PREFIX_BUFFER):
+            prefix = buffer_header = ref.chunck["bufferStack"][0:len(PREFIX_BUFFER)]
+            prefix = prefix.decode("utf-8")
+            if prefix != PREFIX_BUFFER:
+                print("Protocol problem");
+                ref.transport.write("Protocol problem.\n".encode('utf-8'))
+                ref.transport.close()
 
-        if len(ref.chunck["bufferStack"]) >= 8:
-            ref.chunck["headerSize"] = int.from_bytes(ref.chunck["bufferStack"][4:8], byteorder='little')
+        if ref.chunck["messageSize"] == 0 and len(ref.chunck["bufferStack"]) >= len(PREFIX_BUFFER) + 4:
+            ref.chunck["messageSize"] = int.from_bytes(ref.chunck["bufferStack"][len(PREFIX_BUFFER): len(PREFIX_BUFFER) + 4], byteorder='little')
+
+        if len(ref.chunck["bufferStack"]) >= PROTOCOL_PREFIX + len(PREFIX_BUFFER):
+            ref.chunck["headerSize"] = int.from_bytes(ref.chunck["bufferStack"][len(PREFIX_BUFFER) + 4: len(PREFIX_BUFFER) + PROTOCOL_PREFIX], byteorder='little')
 
         if 0 < ref.chunck["messageSize"] <= len(ref.chunck["bufferStack"]):
-            buffer_header = ref.chunck["bufferStack"][8:ref.chunck["headerSize"] + 8]
-            buffer_message = ref.chunck["bufferStack"][ref.chunck["headerSize"] + 8:ref.chunck["messageSize"]]
+            buffer_header = ref.chunck["bufferStack"][PROTOCOL_PREFIX + len(PREFIX_BUFFER):PROTOCOL_PREFIX + len(PREFIX_BUFFER) + ref.chunck["headerSize"]]
+            buffer_message = ref.chunck["bufferStack"][PROTOCOL_PREFIX + len(PREFIX_BUFFER) + ref.chunck["headerSize"]:ref.chunck["messageSize"]]
 
             ref.chunck["bufferStack"] = ref.chunck["bufferStack"][ref.chunck["messageSize"]:]
 
@@ -34,24 +43,24 @@ def receive(ref, data, cb):
 
 
 def send(ref, header, message):
+
+    PREFIX_BUFFER = "HNIO"
+    PROTOCOL_PREFIX = 8
+
     if ref.transport.is_closing():
         raise Exception("Error sending message for a connection (" + str(ref.id) + ") closed ")
 
     str_header = json.dumps(header)
 
     b_header = str_header.encode('utf-8')
-
-    if type(message) is not bytes:
-        b_message = message.encode('utf-8')
-    else:
-        b_message = message
+    b_message = message.encode('utf-8') if isinstance(message, str) else message
 
     int.from_bytes(ref.chunck["bufferStack"][0:4], byteorder='little')
 
-    b_sz_data = (len(b_header) + len(b_message) + 8).to_bytes(4, byteorder='little')
+    b_sz_data = (len(b_header) + len(b_message) + PROTOCOL_PREFIX + len(PREFIX_BUFFER)).to_bytes(4, byteorder='little')
     b_sz_head = (len(b_header)).to_bytes(4, byteorder='little')
 
-    buff = b"".join([b_sz_data, b_sz_head, b_header, b_message])
+    buff = b"".join([PREFIX_BUFFER.encode("utf-8"), b_sz_data, b_sz_head, b_header, b_message])
 
     ref.transport.write(buff)
 
